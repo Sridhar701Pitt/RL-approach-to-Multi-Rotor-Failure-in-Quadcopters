@@ -39,7 +39,7 @@ if __name__ == "__main__":
     ARGS = parser.parse_args()
 
     #### Check the environment's spaces ########################
-    env = gym.make("takeoff-aviary-v0")
+    env = gym.make("hover-aviary-v0")
     print("[INFO] Action space:", env.action_space)
     print("[INFO] Observation space:", env.observation_space)
     check_env(env,

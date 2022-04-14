@@ -34,6 +34,11 @@ register(
 )
 
 register(
+    id='singlerotor-aviary-v0',
+    entry_point='gym_pybullet_drones.envs.single_agent_rl:SingleRotorFailure',
+)
+
+register(
     id='flythrugate-aviary-v0',
     entry_point='gym_pybullet_drones.envs.single_agent_rl:FlyThruGateAviary',
 )

@@ -50,6 +50,7 @@ from gym_pybullet_drones.envs.single_agent_rl.HoverAviary import HoverAviary
 from gym_pybullet_drones.envs.single_agent_rl.FlyThruGateAviary import FlyThruGateAviary
 from gym_pybullet_drones.envs.single_agent_rl.TuneAviary import TuneAviary
 from gym_pybullet_drones.envs.single_agent_rl.BaseSingleAgentAviary import ActionType, ObservationType
+from gym_pybullet_drones.envs.single_agent_rl.SingleRotorFailure import SingleRotorFailure
 
 import shared_constants
 
@@ -60,8 +61,8 @@ if __name__ == "__main__":
 
     #### Define and parse (optional) arguments for the script ##
     parser = argparse.ArgumentParser(description='Single agent reinforcement learning experiments script')
-    parser.add_argument('--env',        default='hover',      type=str,             choices=['takeoff', 'hover', 'flythrugate', 'tune'], help='Task (default: hover)', metavar='')
-    parser.add_argument('--algo',       default='ppo',        type=str,             choices=['a2c', 'ppo', 'sac', 'td3', 'ddpg'],        help='RL agent (default: ppo)', metavar='')
+    parser.add_argument('--env',        default='hover',      type=str,             choices=['takeoff', 'hover', 'flythrugate', 'tune', 'singlerotor'], help='Task (default: hover)', metavar='')
+    parser.add_argument('--algo',       default='sac',        type=str,             choices=['a2c', 'ppo', 'sac', 'td3', 'ddpg'],        help='RL agent (default: ppo)', metavar='')
     parser.add_argument('--obs',        default='kin',        type=ObservationType,                                                      help='Observation space (default: kin)', metavar='')
     parser.add_argument('--act',        default='one_d_rpm',  type=ActionType,                                                           help='Action space (default: one_d_rpm)', metavar='')
     parser.add_argument('--cpu',        default='1',          type=int,                                                                  help='Number of training environments (default: 1)', metavar='')        
@@ -84,9 +85,11 @@ if __name__ == "__main__":
     if ARGS.act == ActionType.ONE_D_RPM or ARGS.act == ActionType.ONE_D_DYN or ARGS.act == ActionType.ONE_D_PID:
         print("\n\n\n[WARNING] Simplified 1D problem for debugging purposes\n\n\n")
     #### Errors ################################################
+        """
         if not ARGS.env in ['takeoff', 'hover']: 
             print("[ERROR] 1D action space is only compatible with Takeoff and HoverAviary")
             exit()
+        """
     if ARGS.act == ActionType.TUN and ARGS.env != 'tune' :
         print("[ERROR] ActionType.TUN is only compatible with TuneAviary")
         exit()
@@ -108,6 +111,12 @@ if __name__ == "__main__":
                                  )
     if env_name == "hover-aviary-v0":
         train_env = make_vec_env(HoverAviary,
+                                 env_kwargs=sa_env_kwargs,
+                                 n_envs=ARGS.cpu,
+                                 seed=0
+                                 )
+    if env_name == "singlerotor-aviary-v0":
+        train_env = make_vec_env(SingleRotorFailure,
                                  env_kwargs=sa_env_kwargs,
                                  n_envs=ARGS.cpu,
                                  seed=0
@@ -167,7 +176,7 @@ if __name__ == "__main__":
                     policy_kwargs=offpolicy_kwargs,
                     tensorboard_log=filename+'/tb/',
                     verbose=1
-                    ) if ARGS.obs==ObservationType.KIN else SAC(sacCnnPolicy,
+                    ) if ARGS.obs==ObservationType.KIN else SAC(SRFNetwork,
                                                                 train_env,
                                                                 policy_kwargs=offpolicy_kwargs,
                                                                 tensorboard_log=filename+'/tb/',
@@ -218,6 +227,12 @@ if __name__ == "__main__":
                                     n_envs=1,
                                     seed=0
                                     )
+        if env_name == "singlerotor-aviary-v0":
+            train_env = make_vec_env(SingleRotorFailure,
+                                     env_kwargs=sa_env_kwargs,
+                                     n_envs=ARGS.cpu,
+                                     seed=0
+                                     )
         if env_name == "flythrugate-aviary-v0": 
             eval_env = make_vec_env(FlyThruGateAviary,
                                     env_kwargs=sa_env_kwargs,
@@ -246,7 +261,7 @@ if __name__ == "__main__":
                                  deterministic=True,
                                  render=False
                                  )
-    model.learn(total_timesteps=35000, #int(1e12),
+    model.learn(total_timesteps=4000, #int(1e12),
                 callback=eval_callback,
                 log_interval=100,
                 )

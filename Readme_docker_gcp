@@ -1,0 +1,146 @@
+# docker build command
+docker build -t python3:gympybullet_gcp .
+
+docker run -it --rm --privileged --net=host --env-file ./.env -v /tmp/.X11-unix:/tmp/.X11-unix:rw -v "$(pwd)":/root/Python_ws --gpus all --shm-size=5.00gb python3:gympybullet_gcp
+# --shm-size param in the above command increases shared memory to 5gb for ray rllib performance
+# Useful Docker commands
+# Setting envs
+#ENV TURTLEBOT3_MODEL=burger
+#RUN echo "source /opt/ros/melodic/setup.bash" >> ~/.bashrc
+
+
+#  after running container
+pip3 install -e .
+python trainers/hover_learn_gcp_sac.py
+
+## Changes to note
+#this added to etc/profile to enable docker access to xhost display
+if [ "$DISPLAY" != "" ]
+then
+  xhost +local:docker
+fi
+
+
+#export variables
+export PROJECT_ID=$(gcloud config list project --format "value(core.project)")
+export IMAGE_REPO_NAME=pybullet_drones_custom_container
+export IMAGE_TAG=pybullet_drones_gpu_sac_fail_hover
+export IMAGE_URI=gcr.io/$PROJECT_ID/$IMAGE_REPO_NAME:$IMAGE_TAG
+
+# bucket commands
+BUCKET_NAME=${PROJECT_ID}-pybullet-test
+REGION=us-central1
+# Create the bucket
+gsutil mb -l $REGION gs://$BUCKET_NAME
+
+#build docker file
+docker build -f Dockerfile -t $IMAGE_URI ./
+
+#run locally first IMAGEURI=gcr.io/potent-arcade-341204/pybullet_drones_custom_container:pybullet_drones_cpu
+# docker run --shm-size=5.03gb $IMAGE_URI --num_workers 4 --episodes 5
+docker run --shm-size=5.03gb $IMAGE_URI --episodes 5
+
+#push docker image to cloud
+docker push $IMAGE_URI
+
+#define env variables
+export MODEL_DIR=hover_task8_Nfloor_Nboundary_5s_30k_Sfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
+export REGION=us-central1
+export JOB_NAME=hover_task8_Nfloor_Nboundary_5s_30k_Sfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
+
+#Submit the job
+gcloud ai-platform jobs submit training $JOB_NAME \
+  --region $REGION \
+  --master-image-uri $IMAGE_URI \
+  --scale-tier BASIC \
+  -- \
+  --model-dir=gs://$BUCKET_NAME/$MODEL_DIR \
+  --num_workers=1 \
+  --checkpoint_interval=100 \
+  --episodes=10
+
+# SAc
+gcloud ai-platform jobs submit training $JOB_NAME \
+  --region $REGION \
+  --master-image-uri $IMAGE_URI \
+  --scale-tier BASIC \
+  -- \
+  --model-dir=gs://$BUCKET_NAME/$MODEL_DIR \
+  --gcp=True \
+  --checkpoint_interval=100 \
+  --gcp_save_interval=1000 \
+  --episodes=20
+
+# SAc - GPU
+gcloud ai-platform jobs submit training $JOB_NAME \
+  --region $REGION \
+  --master-image-uri $IMAGE_URI \
+  --scale-tier BASIC_GPU \
+  -- \
+  --model-dir=gs://$BUCKET_NAME/$MODEL_DIR \
+  --gcp=True \
+  --checkpoint_interval=3000 \
+  --gcp_save_interval=5000 \
+  --episodes=30000 \
+  --num_workers=4 \
+  --num_gpus=0.25
+
+ 
+
+# SAc - CUSTOM
+gcloud ai-platform jobs submit training $JOB_NAME \
+  --region $REGION \
+  --master-image-uri $IMAGE_URI \
+  --scale-tier custom \
+  --master-machine-type n1-highcpu-16 \
+  -- \
+  --model-dir=gs://$BUCKET_NAME/$MODEL_DIR \
+  --gcp=True \
+  --checkpoint_interval=1000 \
+  --gcp_save_interval=2000 \
+  --episodes=50000 \
+  --num_workers=3 \
+  --num_cpus_per_worker=4
+
+
+#monitor jobs and stream logs
+gcloud ai-platform jobs describe $JOB_NAME
+gcloud ai-platform jobs stream-logs $JOB_NAME
+
+
+
+# SIngle past
+docker build -t python3:gympybullet_gcp .
+
+docker run -it --rm --privileged --net=host --env-file ./.env -v /tmp/.X11-unix:/tmp/.X11-unix:rw -v "$(pwd)":/root/Python_ws --gpus all --shm-size=5.00gb python3:gympybullet_gcp
+
+export PROJECT_ID=$(gcloud config list project --format "value(core.project)")
+export IMAGE_REPO_NAME=pybullet_drones_custom_container
+export IMAGE_TAG=pybullet_drones_gpu_sac_fail_hover
+export IMAGE_URI=gcr.io/$PROJECT_ID/$IMAGE_REPO_NAME:$IMAGE_TAG
+
+BUCKET_NAME=${PROJECT_ID}-pybullet-test
+REGION=us-central1
+
+docker build -f Dockerfile -t $IMAGE_URI ./
+
+docker push $IMAGE_URI
+
+export MODEL_DIR=hover_task8_Nfloor_Nboundary_5s_30k_Sfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
+export REGION=us-central1
+export JOB_NAME=hover_task8_Nfloor_Nboundary_5s_30k_Sfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
+
+gcloud ai-platform jobs submit training $JOB_NAME \
+  --region $REGION \
+  --master-image-uri $IMAGE_URI \
+  --scale-tier BASIC_GPU \
+  -- \
+  --model-dir=gs://$BUCKET_NAME/$MODEL_DIR \
+  --gcp=True \
+  --checkpoint_interval=3000 \
+  --gcp_save_interval=5000 \
+  --episodes=30000 \
+  --num_workers=4 \
+  --num_gpus=0.25
+
+ 

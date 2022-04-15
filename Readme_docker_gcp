@@ -39,9 +39,9 @@ docker build -f Dockerfile -t $IMAGE_URI ./
 docker push $IMAGE_URI
 
 #define env variables
-export MODEL_DIR=hover_taskI_10kt_Nfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
+export MODEL_DIR=hover_taskII_10Mt_Sfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
 export REGION=us-central1
-export JOB_NAME=hover_taskI_10kt_Nfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
+export JOB_NAME=hover_taskII_10Mt_Sfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
 
 # For local testing
 #run locally first IMAGEURI=gcr.io/potent-arcade-341204/pybullet_drones_custom_container:pybullet_drones_cpu
@@ -76,7 +76,9 @@ gcloud ai-platform jobs submit training $JOB_NAME \
   -- \
   --model-dir=gs://$BUCKET_NAME/$MODEL_DIR \
   --gcp=True \
-  --steps=10000 
+  --env=singlerotor \
+  --algo=sac \
+  --steps=10000000 
 
 # SAc - CUSTOM
 gcloud ai-platform jobs submit training $JOB_NAME \

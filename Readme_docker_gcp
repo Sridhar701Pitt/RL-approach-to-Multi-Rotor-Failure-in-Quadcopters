@@ -39,9 +39,9 @@ docker build -f Dockerfile -t $IMAGE_URI ./
 docker push $IMAGE_URI
 
 #define env variables
-export MODEL_DIR=hover_taskII_10Mt_Sfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
+export MODEL_DIR=hover_taskII_10Mt_Sfail_ppo_gpu_$(date +%Y%m%d_%H%M%S)
 export REGION=us-central1
-export JOB_NAME=hover_taskII_10Mt_Sfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
+export JOB_NAME=hover_taskII_10Mt_Sfail_ppo_gpu_$(date +%Y%m%d_%H%M%S)
 
 # For local testing
 #run locally first IMAGEURI=gcr.io/potent-arcade-341204/pybullet_drones_custom_container:pybullet_drones_cpu
@@ -103,22 +103,28 @@ docker build -t python3:gympybullet_gcp .
 
 docker run -it --rm --privileged --net=host --env-file ./.env -v /tmp/.X11-unix:/tmp/.X11-unix:rw -v "$(pwd)":/root/Python_ws --gpus all --shm-size=5.00gb python3:gympybullet_gcp
 
+#export variables
 export PROJECT_ID=$(gcloud config list project --format "value(core.project)")
 export IMAGE_REPO_NAME=pybullet_drones_custom_container
-export IMAGE_TAG=pybullet_drones_gpu_sac_fail_hover
+export IMAGE_TAG=pybullet_drones_sac_hover
 export IMAGE_URI=gcr.io/$PROJECT_ID/$IMAGE_REPO_NAME:$IMAGE_TAG
 
+# bucket commands
 BUCKET_NAME=${PROJECT_ID}-pybullet-test
 REGION=us-central1
 
+#build docker file
 docker build -f Dockerfile -t $IMAGE_URI ./
 
+#push docker image to cloud
 docker push $IMAGE_URI
 
-export MODEL_DIR=hover_task8_Nfloor_Nboundary_5s_30k_Sfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
+#define env variables
+export MODEL_DIR=hover_taskII_10Mt_Sfail_ppo_gpu_$(date +%Y%m%d_%H%M%S)
 export REGION=us-central1
-export JOB_NAME=hover_task8_Nfloor_Nboundary_5s_30k_Sfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
+export JOB_NAME=hover_taskII_10Mt_Sfail_ppo_gpu_$(date +%Y%m%d_%H%M%S)
 
+# SAc - GPU
 gcloud ai-platform jobs submit training $JOB_NAME \
   --region $REGION \
   --master-image-uri $IMAGE_URI \
@@ -126,10 +132,6 @@ gcloud ai-platform jobs submit training $JOB_NAME \
   -- \
   --model-dir=gs://$BUCKET_NAME/$MODEL_DIR \
   --gcp=True \
-  --checkpoint_interval=3000 \
-  --gcp_save_interval=5000 \
-  --steps=10000 \
-  --num_workers=4 \
-  --num_gpus=0.25
-
- 
+  --env=singlerotor \
+  --algo=ppo \
+  --steps=10000000

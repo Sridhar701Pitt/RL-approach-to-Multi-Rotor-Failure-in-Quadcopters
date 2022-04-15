@@ -64,7 +64,7 @@ if __name__ == "__main__":
     parser.add_argument('--env',        default='hover',      type=str,             choices=['takeoff', 'hover', 'flythrugate', 'tune', 'singlerotor'], help='Task (default: hover)', metavar='')
     parser.add_argument('--algo',       default='sac',        type=str,             choices=['a2c', 'ppo', 'sac', 'td3', 'ddpg'],        help='RL agent (default: ppo)', metavar='')
     parser.add_argument('--obs',        default='kin',        type=ObservationType,                                                      help='Observation space (default: kin)', metavar='')
-    parser.add_argument('--act',        default='one_d_rpm',  type=ActionType,                                                           help='Action space (default: one_d_rpm)', metavar='')
+    parser.add_argument('--act',        default='rpm',  type=ActionType,                                                           help='Action space (default: one_d_rpm)', metavar='')
     parser.add_argument('--cpu',        default='1',          type=int,                                                                  help='Number of training environments (default: 1)', metavar='') 
     parser.add_argument('--steps',        default=10000,          type=int,                                                                  help='Number of time steps (default: 10000)', metavar='')       
     
@@ -97,6 +97,8 @@ if __name__ == "__main__":
         print("\n\n\n[WARNING] TuneAviary is intended for use with ActionType.TUN\n\n\n")
     if ARGS.act == ActionType.ONE_D_RPM or ARGS.act == ActionType.ONE_D_DYN or ARGS.act == ActionType.ONE_D_PID:
         print("\n\n\n[WARNING] Simplified 1D problem for debugging purposes\n\n\n")
+    if ARGS.act == ActionType.RPM:
+        print("\n\n\n RPM action type\n\n\n")
     #### Errors ################################################
         """
         if not ARGS.env in ['takeoff', 'hover']: 
@@ -227,6 +229,9 @@ if __name__ == "__main__":
                             obs=ARGS.obs,
                             act=ARGS.act
                             )
+        print("/n/n OBS (on reset)")
+        print(eval_env.reset())
+        eval_env.reset
     elif ARGS.obs == ObservationType.RGB:
         if env_name == "takeoff-aviary-v0": 
             eval_env = make_vec_env(TakeoffAviary,

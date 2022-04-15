@@ -224,7 +224,10 @@ class BaseSingleAgentAviary(BaseAviary):
                                          )
             return self._trajectoryTrackingRPMs() 
         elif self.ACT_TYPE == ActionType.RPM:
-            return np.array(self.HOVER_RPM * (1+0.05*action))
+            # return np.array(self.HOVER_RPM * (1+0.05*action))
+            #EDIT: # -1 -> 0 0 -> hover_RPM +1 -> max_RPM
+            return self._normalizedActionToRPM(action)
+            
         elif self.ACT_TYPE == ActionType.DYN:
             return nnlsRPM(thrust=(self.GRAVITY*(action[0]+1)),
                            x_torque=(0.05*self.MAX_XY_TORQUE*action[1]),

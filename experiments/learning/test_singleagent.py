@@ -112,6 +112,7 @@ if __name__ == "__main__":
                     num_drones=1
                     )
     obs = test_env.reset()
+    print("OBS (on reset): ", obs)
     start = time.time()
     for i in range(12*int(test_env.SIM_FREQ/test_env.AGGR_PHY_STEPS)): # Up to 6''
         action, _states = model.predict(obs,

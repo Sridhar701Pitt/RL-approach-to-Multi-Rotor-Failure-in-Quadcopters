@@ -115,7 +115,7 @@ class SingleRotorFailure(HoverAviary):
         rpms = super()._preprocessAction(action)
         # Set 1,3rd motor value to 0
         # dual rotor
-        rpms[0] = 0
+        # rpms[0] = 0
         rpms[2] = 0
         # print(action)
         # print(rpms)

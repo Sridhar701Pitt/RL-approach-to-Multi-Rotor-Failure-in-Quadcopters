@@ -65,19 +65,32 @@ if __name__ == "__main__":
     parser.add_argument('--algo',       default='sac',        type=str,             choices=['a2c', 'ppo', 'sac', 'td3', 'ddpg'],        help='RL agent (default: ppo)', metavar='')
     parser.add_argument('--obs',        default='kin',        type=ObservationType,                                                      help='Observation space (default: kin)', metavar='')
     parser.add_argument('--act',        default='one_d_rpm',  type=ActionType,                                                           help='Action space (default: one_d_rpm)', metavar='')
-    parser.add_argument('--cpu',        default='1',          type=int,                                                                  help='Number of training environments (default: 1)', metavar='')        
+    parser.add_argument('--cpu',        default='1',          type=int,                                                                  help='Number of training environments (default: 1)', metavar='') 
+    parser.add_argument('--steps',        default=10000,          type=int,                                                                  help='Number of time steps (default: 10000)', metavar='')       
+    
+    # parser.add_argument('--gcp_save_interval',   default=2000,        type=int,       help='Number of timesteps between saves (default: 2000)', metavar='')
+    parser.add_argument('--gcp', type=bool, default=False, help='set to True if running on gcp')
+    parser.add_argument('--model-dir', default=None, help='The directory to store the model - relevant if gcp is true')
+
     ARGS = parser.parse_args()
 
     #### Save directory ########################################
-    filename = os.path.dirname(os.path.abspath(__file__))+'/results/save-'+ARGS.env+'-'+ARGS.algo+'-'+ARGS.obs.value+'-'+ARGS.act.value+'-'+datetime.now().strftime("%m.%d.%Y_%H.%M.%S")
+    foldername = 'save-'+ARGS.env+'-'+ARGS.algo+'-'+ARGS.obs.value+'-'+ARGS.act.value+'-'+datetime.now().strftime("%m.%d.%Y_%H.%M.%S")
+    filename = os.path.dirname(os.path.abspath(__file__))+'/results/'+foldername
     if not os.path.exists(filename):
         os.makedirs(filename+'/')
+    
+    #### Print config #################################
+    print("=============================")
+    print("EXPERIMENT: hover_taskI_10kt_Nfail_sac")
+    print("-----------------------------")    
 
     #### Print out current git commit hash #####################
-    if platform == "linux" or platform == "darwin":
-        git_commit = subprocess.check_output(["git", "describe", "--tags"]).strip()
-        with open(filename+'/git_commit.txt', 'w+') as f:
-            f.write(str(git_commit))
+    # Comment for now to work with docker
+    # if platform == "linux" or platform == "darwin":
+    #     git_commit = subprocess.check_output(["git", "describe", "--tags"]).strip()
+    #     with open(filename+'/git_commit.txt', 'w+') as f:
+    #         f.write(str(git_commit))
 
     #### Warning ###############################################
     if ARGS.env == 'tune' and ARGS.act != ActionType.TUN:
@@ -261,16 +274,24 @@ if __name__ == "__main__":
                                  deterministic=True,
                                  render=False
                                  )
-    model.learn(total_timesteps=4000, #int(1e12),
+    model.learn(total_timesteps=ARGS.steps, #int(1e12),
                 callback=eval_callback,
                 log_interval=100,
                 )
+    
+
 
     #### Save the model ########################################
     model.save(filename+'/success_model.zip')
     print(filename)
 
+    if ARGS.gcp:
+        print("Saving to GCP...")
+        subprocess.check_call([
+                'gsutil', 'cp', '-r', filename, os.path.join(ARGS.model_dir,foldername)])
+        print("saving to GCP... Done")
+
     #### Print training progression ############################
     with np.load(filename+'/evaluations.npz') as data:
         for j in range(data['timesteps'].shape[0]):
-            print(str(data['timesteps'][j])+","+str(data['results'][j][0][0]))
+            print(str(data['timesteps'][j])+","+str(data['results'][j][0]))

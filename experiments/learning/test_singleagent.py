@@ -113,7 +113,7 @@ if __name__ == "__main__":
                     )
     obs = test_env.reset()
     start = time.time()
-    for i in range(6*int(test_env.SIM_FREQ/test_env.AGGR_PHY_STEPS)): # Up to 6''
+    for i in range(12*int(test_env.SIM_FREQ/test_env.AGGR_PHY_STEPS)): # Up to 6''
         action, _states = model.predict(obs,
                                         deterministic=True # OPTIONAL 'deterministic=False'
                                         )

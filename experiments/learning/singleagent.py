@@ -43,7 +43,7 @@ from stable_baselines3.sac.policies import SACPolicy as sacMlpPolicy
 from stable_baselines3.sac import CnnPolicy as sacCnnPolicy
 from stable_baselines3.td3 import MlpPolicy as td3ddpgMlpPolicy
 from stable_baselines3.td3 import CnnPolicy as td3ddpgCnnPolicy
-from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback, StopTrainingOnRewardThreshold
+from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback, StopTrainingOnRewardThreshold, EveryNTimesteps, BaseCallback, CallbackList
 
 from gym_pybullet_drones.envs.single_agent_rl.TakeoffAviary import TakeoffAviary
 from gym_pybullet_drones.envs.single_agent_rl.HoverAviary import HoverAviary
@@ -53,6 +53,63 @@ from gym_pybullet_drones.envs.single_agent_rl.BaseSingleAgentAviary import Actio
 from gym_pybullet_drones.envs.single_agent_rl.SingleRotorFailure import SingleRotorFailure
 
 import shared_constants
+
+## Custom callback for saving to gcp
+class SaveGCPStorageCallback(BaseCallback):
+    def __init__(self, foldername, filename, modelDir, verbose=0):
+        super(SaveGCPStorageCallback, self).__init__(verbose)
+        self.checkpoint_counter = 1
+        self.foldername = foldername
+        self.filename = filename
+        self.modelDir = modelDir
+    
+    def _on_step(self) -> bool:
+        """
+        This method will be called by the model after each call to `env.step()`.
+
+        For child callback (of an `EventCallback`), this will be called
+        when the event is triggered.
+
+        :return: (bool) If the callback returns False, training is aborted early.
+
+        """
+        print("Saving to GCP (callback)")
+        gcp_checkpoint_folder = 'checkpoint_' + str(self.checkpoint_counter)
+
+        subprocess.check_call([
+        'gsutil', 'cp', '-r', self.filename, os.path.join(self.modelDir,gcp_checkpoint_folder,self.foldername)])
+
+        print("Saved to GCP Storage (callback)")
+        print("--------------------------------")
+        self.checkpoint_counter = self.checkpoint_counter + 1
+
+        return True
+    
+    def _on_training_start(self) -> None:
+        """
+        This method is called before the first rollout starts.
+        """
+        pass
+
+    def _on_rollout_start(self) -> None:
+        """
+        A rollout is the collection of environment interaction
+        using the current policy.
+        This event is triggered before collecting new samples.
+        """
+        pass
+
+    def _on_rollout_end(self) -> None:
+        """
+        This event is triggered before updating the policy.
+        """
+        pass
+
+    def _on_training_end(self) -> None:
+        """
+        This event is triggered before exiting the `learn()` method.
+        """
+        pass
 
 EPISODE_REWARD_THRESHOLD = -0 # Upperbound: rewards are always negative, but non-zero
 """float: Reward threshold to halt the script."""
@@ -68,7 +125,7 @@ if __name__ == "__main__":
     parser.add_argument('--cpu',        default='1',          type=int,                                                                  help='Number of training environments (default: 1)', metavar='') 
     parser.add_argument('--steps',        default=10000,          type=int,                                                                  help='Number of time steps (default: 10000)', metavar='')       
     
-    # parser.add_argument('--gcp_save_interval',   default=2000,        type=int,       help='Number of timesteps between saves (default: 2000)', metavar='')
+    parser.add_argument('--gcp_save_interval',   default=4000,        type=int,       help='Number of timesteps between saves (default: 4000)', metavar='')
     parser.add_argument('--gcp', type=bool, default=False, help='set to True if running on gcp')
     parser.add_argument('--model-dir', default=None, help='The directory to store the model - relevant if gcp is true')
 
@@ -266,10 +323,11 @@ if __name__ == "__main__":
         eval_env = VecTransposeImage(eval_env)
 
     #### Train the model #######################################
-    # checkpoint_callback = CheckpointCallback(save_freq=1000, save_path=filename+'-logs/', name_prefix='rl_model')
+    
     callback_on_best = StopTrainingOnRewardThreshold(reward_threshold=EPISODE_REWARD_THRESHOLD,
                                                      verbose=1
                                                      )
+
     eval_callback = EvalCallback(eval_env,
                                  callback_on_new_best=callback_on_best,
                                  verbose=1,
@@ -279,18 +337,28 @@ if __name__ == "__main__":
                                  deterministic=True,
                                  render=False
                                  )
-    model.learn(total_timesteps=ARGS.steps, #int(1e12),
-                callback=eval_callback,
-                log_interval=100,
-                )
-    
 
+    #Save to GCP storage every Ntime steps
+    if ARGS.gcp:
+        checkpoint_callback = CheckpointCallback(save_freq=1, save_path=filename+'-logs/', name_prefix='rl_model')
+        callback_on_gcp_save = SaveGCPStorageCallback(foldername=foldername,filename=filename, modelDir=ARGS.model_dir)        
+        event_callback = EveryNTimesteps(n_steps=ARGS.gcp_save_interval, callback=CallbackList([checkpoint_callback, callback_on_gcp_save]))
+
+        model.learn(total_timesteps=ARGS.steps, #int(1e12),
+                    callback=CallbackList([eval_callback, event_callback]),
+                    log_interval=100,
+                    )
+    else:
+        model.learn(total_timesteps=ARGS.steps, #int(1e12),
+                    callback=eval_callback,
+                    log_interval=100,
+                    )
 
     #### Save the model ########################################
     model.save(filename+'/success_model.zip')
     print(filename)
 
-    if ARGS.gcp:
+    if ARGS.gcp: 
         print("Saving to GCP...")
         subprocess.check_call([
                 'gsutil', 'cp', '-r', filename, os.path.join(ARGS.model_dir,foldername)])

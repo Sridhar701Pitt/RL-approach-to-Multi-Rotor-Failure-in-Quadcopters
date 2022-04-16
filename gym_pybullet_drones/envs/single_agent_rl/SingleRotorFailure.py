@@ -28,6 +28,7 @@ class SingleRotorFailure(HoverAviary):
                          obs=obs,
                          act=act
                          )
+        self.initial_point = initial_xyzs
         self.goal_point = np.array([0, 0, 1])
 
 
@@ -120,3 +121,16 @@ class SingleRotorFailure(HoverAviary):
         # print(action)
         # print(rpms)
         return rpms
+
+    def reset(self):
+        """Resets the environment.
+
+        Returns
+        -------
+        ndarray | dict[..]
+            The initial observation, check the specific implementation of `_computeObs()`
+            in each subclass for its format.
+        """
+        ## WE want to introduce some variation in the intial positions for robustness
+        self.INIT_XYZS = self.initial_point + 0.3*(2*np.random.rand(1,3)-1)
+        return super().reset()

@@ -120,9 +120,9 @@ docker build -f Dockerfile -t $IMAGE_URI ./
 docker push $IMAGE_URI
 
 #define env variables
-export MODEL_DIR=hover_taskII_3Mt_Dfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
+export MODEL_DIR=hover_taskII_5Mt_Dfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
 export REGION=us-central1
-export JOB_NAME=hover_taskII_3Mt_Dfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
+export JOB_NAME=hover_taskII_5Mt_Dfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
 
 # SAc - GPU
 gcloud ai-platform jobs submit training $JOB_NAME \
@@ -135,4 +135,4 @@ gcloud ai-platform jobs submit training $JOB_NAME \
   --env=singlerotor \
   --algo=sac \
   --gcp_save_interval=1000000 \
-  --steps=3000000
+  --steps=5000000

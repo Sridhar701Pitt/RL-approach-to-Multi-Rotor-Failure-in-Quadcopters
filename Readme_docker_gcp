@@ -98,7 +98,7 @@ gcloud ai-platform jobs stream-logs $JOB_NAME
 
 
 
-# SIngle past
+# Single paste
 docker build -t python3:gympybullet_gcp .
 
 docker run -it --rm --privileged --net=host --env-file ./.env -v /tmp/.X11-unix:/tmp/.X11-unix:rw -v "$(pwd)":/root/Python_ws --gpus all --shm-size=5.00gb python3:gympybullet_gcp
@@ -120,9 +120,9 @@ docker build -f Dockerfile -t $IMAGE_URI ./
 docker push $IMAGE_URI
 
 #define env variables
-export MODEL_DIR=hover_taskII_3Mt_Sfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
+export MODEL_DIR=hover_taskII_3Mt_Dfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
 export REGION=us-central1
-export JOB_NAME=hover_taskII_3Mt_Sfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
+export JOB_NAME=hover_taskII_3Mt_Dfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
 
 # SAc - GPU
 gcloud ai-platform jobs submit training $JOB_NAME \

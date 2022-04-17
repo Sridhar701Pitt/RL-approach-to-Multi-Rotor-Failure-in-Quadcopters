@@ -120,9 +120,9 @@ docker build -f Dockerfile -t $IMAGE_URI ./
 docker push $IMAGE_URI
 
 #define env variables
-export MODEL_DIR=hover_taskV_5Mt_Sfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
+export MODEL_DIR=hover_taskVI_5Mt_Sfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
 export REGION=us-central1
-export JOB_NAME=hover_taskV_5Mt_Sfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
+export JOB_NAME=hover_taskVI_5Mt_Sfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
 
 # SAc - GPU
 gcloud ai-platform jobs submit training $JOB_NAME \
@@ -135,10 +135,10 @@ gcloud ai-platform jobs submit training $JOB_NAME \
   --env=singlerotor \
   --algo=sac \
   --premod=True \
-  --preloc=pretrained/save-singlerotor-sac-kin-rpm-04.16.2022_06.21.38/ \
+  --preloc=pretrained/save-singlerotor-sac-kin-rpm-04.17.2022_05.14.35/ \
   --gcp_save_interval=1000000 \
   --steps=5000000
 
 
   #Local tersting (dont copy with above)
-  docker run --shm-size=5.03gb $IMAGE_URI --env=singlerotor --premod=True --preloc=pretrained/save-singlerotor-sac-kin-rpm-04.16.2022_06.21.38/
+  docker run --shm-size=5.03gb $IMAGE_URI --env=singlerotor --premod=True --preloc=pretrained/save-singlerotor-sac-kin-rpm-04.17.2022_05.14.35/

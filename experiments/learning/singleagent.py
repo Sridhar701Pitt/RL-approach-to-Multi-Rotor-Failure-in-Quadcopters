@@ -131,7 +131,6 @@ if __name__ == "__main__":
     # Use pretrained model params
     parser.add_argument('--premod', type=bool, default=False, help='set to True if using the pretrained model')
     parser.add_argument('--preloc', type=str, help='The pretrained folder written as pretrained/save-<env>-<algo>-<obs>-<act>-<time_date>', metavar='')
-    
 
     ARGS = parser.parse_args()
 
@@ -144,7 +143,7 @@ if __name__ == "__main__":
     
     #### Print config #################################
     print("=============================")
-    print("EXPERIMENT: hover_taskV_5Mt_Sfail_sac_gpu")
+    print("EXPERIMENT: hover_taskVI_5Mt_Sfail_sac_gpu")
     print("-----------------------------")    
 
     #### Print out current git commit hash #####################

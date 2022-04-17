@@ -14,6 +14,7 @@ import time
 from datetime import datetime
 import argparse
 import re
+from turtle import goto
 import numpy as np
 import gym
 import torch
@@ -49,6 +50,8 @@ if __name__ == "__main__":
     #### Define and parse (optional) arguments for the script ##
     parser = argparse.ArgumentParser(description='Single agent reinforcement learning example script using TakeoffAviary')
     parser.add_argument('--exp',                           type=str,            help='The experiment folder written as ./results/save-<env>-<algo>-<obs>-<act>-<time_date>', metavar='')
+        # Use predefined goal path
+    parser.add_argument('--goalpath', type=bool, default=False, help='set to True if using the predefined goal path')
     ARGS = parser.parse_args()
 
     #### Load the model from file ##############################
@@ -111,6 +114,27 @@ if __name__ == "__main__":
                         obs=OBS,
                         act=ACT
                         )
+
+    #### Create a goal path for test env
+    total_sec = 25
+    steps_per_sec = int(test_env.SIM_FREQ/test_env.AGGR_PHY_STEPS)
+    total_steps = total_sec*int(test_env.SIM_FREQ/test_env.AGGR_PHY_STEPS)
+    if ARGS.goalpath:
+        goal_path = []
+        # Square path
+        steps_2_5 = np.floor(2.5*steps_per_sec)
+        steps_5 = np.floor(5*steps_per_sec)
+        corner_timestamp = np.floor(steps_per_sec*np.array([0, 2.5, 2.5+5, 2.5+10, 2.5+15, 2.5+20, 25]))
+        corners = np.array([[0.0,0.0,0.0],[0.0,0.0,0.0],[0.0,1.0,0.0],[1.0,1.0,0.0],[1.0,0.0,0.0],[0.0,0.0,0.0],[0.0,0.0,0.0]])
+        for i in range(total_steps):
+            goal_x = np.interp(i,corner_timestamp,corners[:,0])
+            goal_y = np.interp(i,corner_timestamp,corners[:,1])
+            goal_z = np.interp(i,corner_timestamp,corners[:,2])
+            goal_path.append(np.array([goal_x,goal_y,goal_z]))
+        #Send goal to script
+        test_env.injectGoals(goal_path)
+
+
     logger = Logger(logging_freq_hz=int(test_env.SIM_FREQ/test_env.AGGR_PHY_STEPS),
                     num_drones=1
                     )
@@ -120,8 +144,8 @@ if __name__ == "__main__":
 
     #reward curve
     # print("steps per second: ", int(test_env.SIM_FREQ/test_env.AGGR_PHY_STEPS))
-    rewardY = np.zeros(25*int(test_env.SIM_FREQ/test_env.AGGR_PHY_STEPS))
-    for i in range(25*int(test_env.SIM_FREQ/test_env.AGGR_PHY_STEPS)): # Up to 6''
+    rewardY = np.zeros(total_steps)
+    for i in range(total_steps): # Up to 6''
         action, _states = model.predict(obs,
                                         deterministic=True # OPTIONAL 'deterministic=False'
                                         )

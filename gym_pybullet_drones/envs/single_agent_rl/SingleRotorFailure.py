@@ -4,11 +4,12 @@ from gym_pybullet_drones.envs.single_agent_rl.HoverAviary import HoverAviary
 from gym_pybullet_drones.envs.single_agent_rl.BaseSingleAgentAviary import ActionType, ObservationType, BaseSingleAgentAviary
 
 from gym import spaces
+import pybullet as p
 class SingleRotorFailure(HoverAviary):
     def __init__(
             self,
             drone_model=DroneModel.CF2X,
-            initial_xyzs=np.array([[0,0,0]]),
+            initial_xyzs=np.array([[0.0,0.0,0.0]]),
             initial_rpys=None,
             physics=Physics.PYB,
             freq: int = 240,
@@ -18,6 +19,19 @@ class SingleRotorFailure(HoverAviary):
             obs=ObservationType.KIN,
             act=ActionType.RPM
     ):
+        self.goal_point = np.array([0.0, 0.0, 0.0])
+        self.GUI = gui
+        if self.GUI:
+            ## Drone tracking params
+            self.rayFrom = []
+            self.rayTo = []
+            self.rayIds = []
+            self.renderCount = 0
+            ## goal tracking params
+            self.gRayFrom = []
+            self.gRayTo = []
+            self.gRayIds = []
+            
         super().__init__(drone_model=drone_model,
                          initial_xyzs=initial_xyzs,
                          initial_rpys=initial_rpys,
@@ -30,7 +44,9 @@ class SingleRotorFailure(HoverAviary):
                          act=act
                          )
         self.initial_point = initial_xyzs
-        self.goal_point = np.array([0.5, 0.5, 0.5])
+        self.goal_point = np.array([0.0, 0.0, 0.0])
+
+
 
 
     def _clipAndNormalizeState(self,
@@ -172,6 +188,83 @@ class SingleRotorFailure(HoverAviary):
             The initial observation, check the specific implementation of `_computeObs()`
             in each subclass for its format.
         """
-        ## WE want to introduce some variation in the intial positions for robustness
-        self.INIT_XYZS = self.initial_point + 1.0*(2*np.random.rand(1,3)-1)
+        if self.GUI == True and len(self.gRayFrom) != 0:
+            # If custom goalpoints
+            self.INIT_XYZS = self.initial_point
+        else:
+            ## WE want to introduce some variation in the intial positions for robustness
+            self.INIT_XYZS = self.initial_point + 1.0*(2*np.random.rand(1,3)-1)
+
+        if self.GUI:
+            #EDIT: update drone tracer
+            if len(self.rayFrom) != 0:
+                #Not empty list
+                self.rayFrom.pop(-1)
+            self.rayFrom.append(self.INIT_XYZS.flatten())
+
+            # Reset goal
+            if len(self.gRayFrom) != 0:
+                self.goal_point = self.gRayTo[0]
+                print("Initial Goal (rays): ", self.goal_point)
+            else:
+                print("Initial Goal (not rays): ", self.goal_point)
+
         return super().reset()
+    
+    def _housekeeping(self):
+        """Housekeeping function.
+
+        Allocation and zero-ing of the variables and PyBullet's parameters/objects
+        in the `reset()` function.
+
+        """
+        if self.GUI:
+            ## Add some lines oohooo
+            # Draw goal path
+            if len(self.gRayFrom) != 0:
+                for i in range(len(self.gRayFrom)):
+                    self.gRayIds.append(p.addUserDebugLine(self.gRayFrom[i], self.gRayTo[i], lineColorRGB=[1.0,0.1,0.1],lineWidth=2, physicsClientId=self.CLIENT))
+            else:
+                p.addUserDebugLine(self.INIT_XYZS.flatten(),self.goal_point,lineColorRGB=[1.0,0.1,0.1],lineWidth=2, physicsClientId=self.CLIENT)
+
+        return super()._housekeeping()
+
+    ################################################################################
+
+    def _computeInfo(self): #This functions executes near the end of step function
+        """Computes the current info dict(s).
+
+        Unused.
+
+        Returns
+        -------
+        dict[str, int]
+            Dummy value.
+
+        """
+
+        ## EDIT: update drone tracers
+        if self.GUI:
+            i = self.renderCount
+            xyz_positions = self._getDroneStateVector(0)[0:3]
+            self.rayFrom.append(xyz_positions)
+            self.rayTo.append(xyz_positions)
+            self.rayIds.append(p.addUserDebugLine(self.rayFrom[i], self.rayTo[i], lineColorRGB=[0.1,0.1,1.0],lineWidth=2, physicsClientId=self.CLIENT))
+            self.renderCount = self.renderCount + 1
+
+            if len(self.gRayFrom) != 0:
+                # Update goal point and change color
+                self.goal_point = self.gRayTo[self.renderCount]
+                p.addUserDebugLine(self.gRayFrom[i],self.gRayTo[i], lineColorRGB=[0.1,1.0,0.1],replaceItemUniqueId=self.gRayIds[i],lineWidth=2, physicsClientId=self.CLIENT)
+
+
+        return super()._computeInfo()
+
+    ################################################################################
+    
+    def injectGoals(self, goal_path):
+        if self.GUI:
+            self.initial_point = goal_path[0].reshape((1,3))
+            self.gRayFrom = goal_path[0:-1]
+            self.gRayTo = goal_path[1:]
+

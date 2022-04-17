@@ -3,11 +3,12 @@ from gym_pybullet_drones.envs.BaseAviary import DroneModel, Physics, BaseAviary
 from gym_pybullet_drones.envs.single_agent_rl.HoverAviary import HoverAviary
 from gym_pybullet_drones.envs.single_agent_rl.BaseSingleAgentAviary import ActionType, ObservationType, BaseSingleAgentAviary
 
+from gym import spaces
 class SingleRotorFailure(HoverAviary):
     def __init__(
             self,
             drone_model=DroneModel.CF2X,
-            initial_xyzs=np.array([[0,0,1]]),
+            initial_xyzs=np.array([[0,0,0]]),
             initial_rpys=None,
             physics=Physics.PYB,
             freq: int = 240,
@@ -29,7 +30,7 @@ class SingleRotorFailure(HoverAviary):
                          act=act
                          )
         self.initial_point = initial_xyzs
-        self.goal_point = np.array([1, 1, 0.5])
+        self.goal_point = np.array([0.5, 0.5, 0.5])
 
 
     def _clipAndNormalizeState(self,
@@ -56,8 +57,12 @@ class SingleRotorFailure(HoverAviary):
 
         MAX_PITCH_ROLL = np.pi # Full range
 
-        clipped_pos_xy = np.clip(state[0:2], -MAX_XY, MAX_XY)
-        clipped_pos_z = np.clip(state[2], 0, MAX_Z)
+        #EDIT: relative position with respect to the goal point
+        relative_pos_xy = state[0:2] - self.goal_point[0:2]
+        relative_pos_z = state[2] - self.goal_point[2]
+
+        clipped_pos_xy = np.clip(relative_pos_xy, -MAX_XY, MAX_XY) #EDIT: relative xy positons
+        clipped_pos_z = np.clip(relative_pos_z, -MAX_Z, MAX_Z) #EDIT: z position can be negative and is relative
         clipped_rp = np.clip(state[7:9], -MAX_PITCH_ROLL, MAX_PITCH_ROLL)
         clipped_vel_xy = np.clip(state[10:12], -MAX_LIN_VEL_XY, MAX_LIN_VEL_XY)
         clipped_vel_z = np.clip(state[12], -MAX_LIN_VEL_Z, MAX_LIN_VEL_Z)
@@ -91,6 +96,42 @@ class SingleRotorFailure(HoverAviary):
                                       ]).reshape(20,)
 
         return norm_and_clipped
+
+        ################################################################################
+
+    def _observationSpace(self):
+        """Returns the observation space of the environment.
+
+        Returns
+        -------
+        ndarray
+            A Box() of shape (H,W,4) or (12,) depending on the observation type.
+
+        """
+        if self.OBS_TYPE == ObservationType.RGB:
+            return spaces.Box(low=0,
+                              high=255,
+                              shape=(self.IMG_RES[1], self.IMG_RES[0], 4),
+                              dtype=np.uint8
+                              )
+        elif self.OBS_TYPE == ObservationType.KIN:
+            ############################################################
+            #### OBS OF SIZE 20 (WITH QUATERNION AND RPMS)
+            #### Observation vector ### X        Y        Z       Q1   Q2   Q3   Q4   R       P       Y       VX       VY       VZ       WX       WY       WZ       P0            P1            P2            P3
+            # obs_lower_bound = np.array([-1,      -1,      0,      -1,  -1,  -1,  -1,  -1,     -1,     -1,     -1,      -1,      -1,      -1,      -1,      -1,      -1,           -1,           -1,           -1])
+            # obs_upper_bound = np.array([1,       1,       1,      1,   1,   1,   1,   1,      1,      1,      1,       1,       1,       1,       1,       1,       1,            1,            1,            1])          
+            # return spaces.Box( low=obs_lower_bound, high=obs_upper_bound, dtype=np.float32 )
+            ############################################################
+            #### OBS SPACE OF SIZE 12
+            return spaces.Box(low=np.array([-1,-1,-1, -1,-1,-1, -1,-1,-1, -1,-1,-1]), #EDIT: z spans from -1 to 1
+                              high=np.array([1,1,1, 1,1,1, 1,1,1, 1,1,1]),
+                              dtype=np.float32
+                              )
+            ############################################################
+        else:
+            print("[ERROR] in BaseSingleAgentAviary._observationSpace()")
+    
+    ################################################################################
 
     def _preprocessAction(self, action):
         """Pre-processes the action passed to `.step()` into motors' RPMs.
@@ -132,5 +173,5 @@ class SingleRotorFailure(HoverAviary):
             in each subclass for its format.
         """
         ## WE want to introduce some variation in the intial positions for robustness
-        self.INIT_XYZS = self.initial_point + 0.3*(2*np.random.rand(1,3)-1)
+        self.INIT_XYZS = self.initial_point + 1.0*(2*np.random.rand(1,3)-1)
         return super().reset()

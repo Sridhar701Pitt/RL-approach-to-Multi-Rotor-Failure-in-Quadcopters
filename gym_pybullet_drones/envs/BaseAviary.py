@@ -481,12 +481,12 @@ class BaseAviary(gym.Env):
         p.setTimeStep(self.TIMESTEP, physicsClientId=self.CLIENT)
         p.setAdditionalSearchPath(pybullet_data.getDataPath(), physicsClientId=self.CLIENT)
 
-        ## Add some lines oohooo
-        print("Deubug line")
-        p.addUserDebugLine([0,0,1],[1,1,0.5],lineColorRGB=[1.0,0.1,0.1],lineWidth=2, physicsClientId=self.CLIENT)
+        ## Add some lines oohooo #EDIT: Commented to temporarily stop this low priority task
+        # print("Deubug line")
+        # p.addUserDebugLine([0,0,1],[1,1,0.5],lineColorRGB=[1.0,0.1,0.1],lineWidth=2, physicsClientId=self.CLIENT)
 
         #### Load ground plane, drone and obstacles models #########
-        self.PLANE_ID = p.loadURDF("plane.urdf", physicsClientId=self.CLIENT)
+        # self.PLANE_ID = p.loadURDF("plane.urdf", physicsClientId=self.CLIENT) #EDIT: remove plane to avoid collisions
         self.DRONE_IDS = np.array([p.loadURDF(os.path.dirname(os.path.abspath(__file__))+"/../assets/"+self.URDF,
                                               self.INIT_XYZS[i,:],
                                               p.getQuaternionFromEuler(self.INIT_RPYS[i,:]),

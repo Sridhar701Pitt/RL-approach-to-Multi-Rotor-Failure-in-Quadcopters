@@ -144,7 +144,7 @@ if __name__ == "__main__":
     
     #### Print config #################################
     print("=============================")
-    print("EXPERIMENT: hover_taskII_5Mt_Dfail_sac_gpu")
+    print("EXPERIMENT: hover_taskV_5Mt_Sfail_sac_gpu")
     print("-----------------------------")    
 
     #### Print out current git commit hash #####################
@@ -264,20 +264,20 @@ if __name__ == "__main__":
         #load from a saved model
         if ARGS.premod == True:
             preloc_filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), ARGS.preloc)
-            print(preloc_filename)
-            if os.path.isfile(preloc_filename+'/success_model.zip'):
-                preloc_path = preloc_filename+'/success_model.zip'
-            elif os.path.isfile(preloc_filename+'/best_model.zip'):
-                preloc_path = preloc_filename+'/best_model.zip'
+
+            if os.path.isfile(preloc_filename+'success_model.zip'):
+                preloc_path = preloc_filename+'success_model.zip'
+            elif os.path.isfile(preloc_filename+'best_model.zip'):
+                preloc_path = preloc_filename+'best_model.zip'
             else:
                 print("[ERROR]: no model under the specified path", preloc_filename)
-                exit("Exit: No saved model Found")
+                exit("[ERROR]: Exit: No saved model Found")
 
-            print("loading from saved model from", preloc_path)
+            print("[INFO]: Loading saved model from: ", preloc_path)
             model.set_parameters(preloc_path)
-            print("SAC Model Loaded")
+            print("[INFO]: SAC Model Loaded")
         else:
-            print("NOTE: Model is being trained from scratch")
+            print("[INFO]: Model is being trained from scratch")
 
     if ARGS.algo == 'td3':
         model = TD3(td3ddpgMlpPolicy,

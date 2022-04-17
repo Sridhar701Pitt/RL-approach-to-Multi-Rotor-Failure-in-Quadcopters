@@ -39,6 +39,9 @@ from gym_pybullet_drones.envs.single_agent_rl.FlyThruGateAviary import FlyThruGa
 from gym_pybullet_drones.envs.single_agent_rl.TuneAviary import TuneAviary
 from gym_pybullet_drones.envs.single_agent_rl.BaseSingleAgentAviary import ActionType, ObservationType
 
+#plot
+import matplotlib.pyplot as plt
+
 import shared_constants
 
 if __name__ == "__main__":
@@ -114,11 +117,16 @@ if __name__ == "__main__":
     obs = test_env.reset()
     print("OBS (on reset): ", obs)
     start = time.time()
-    for i in range(12*int(test_env.SIM_FREQ/test_env.AGGR_PHY_STEPS)): # Up to 6''
+
+    #reward curve
+    # print("steps per second: ", int(test_env.SIM_FREQ/test_env.AGGR_PHY_STEPS))
+    rewardY = np.zeros(25*int(test_env.SIM_FREQ/test_env.AGGR_PHY_STEPS))
+    for i in range(25*int(test_env.SIM_FREQ/test_env.AGGR_PHY_STEPS)): # Up to 6''
         action, _states = model.predict(obs,
                                         deterministic=True # OPTIONAL 'deterministic=False'
                                         )
-        obs, reward, done, info = test_env.step(action)
+        obs, rewardY[i], done, info = test_env.step(action)
+
         test_env.render()
         if OBS==ObservationType.KIN:
             logger.log(drone=0,
@@ -127,10 +135,13 @@ if __name__ == "__main__":
                        control=np.zeros(12)
                        )
         sync(np.floor(i*test_env.AGGR_PHY_STEPS), start, test_env.TIMESTEP)
-        # if done: obs = test_env.reset() # OPTIONAL EPISODE HALT
+        if done: obs = test_env.reset() # OPTIONAL EPISODE HALT
     test_env.close()
     logger.save_as_csv("sa") # Optional CSV save
     logger.plot()
+
+    plt.plot(rewardY)
+    plt.show()
 
     # with np.load(ARGS.exp+'/evaluations.npz') as data:
     #     print(data.files)

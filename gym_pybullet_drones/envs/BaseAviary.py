@@ -480,6 +480,11 @@ class BaseAviary(gym.Env):
         p.setRealTimeSimulation(0, physicsClientId=self.CLIENT)
         p.setTimeStep(self.TIMESTEP, physicsClientId=self.CLIENT)
         p.setAdditionalSearchPath(pybullet_data.getDataPath(), physicsClientId=self.CLIENT)
+
+        ## Add some lines oohooo
+        print("Deubug line")
+        p.addUserDebugLine([0,0,1],[1,1,0.5],lineColorRGB=[1.0,0.1,0.1],lineWidth=2, physicsClientId=self.CLIENT)
+
         #### Load ground plane, drone and obstacles models #########
         self.PLANE_ID = p.loadURDF("plane.urdf", physicsClientId=self.CLIENT)
         self.DRONE_IDS = np.array([p.loadURDF(os.path.dirname(os.path.abspath(__file__))+"/../assets/"+self.URDF,
@@ -498,6 +503,8 @@ class BaseAviary(gym.Env):
             # p.setCollisionFilterPair(bodyUniqueIdA=self.PLANE_ID, bodyUniqueIdB=self.DRONE_IDS[i], linkIndexA=-1, linkIndexB=-1, enableCollision=0, physicsClientId=self.CLIENT)
         if self.OBSTACLES:
             self._addObstacles()
+        
+
     
     ################################################################################
 

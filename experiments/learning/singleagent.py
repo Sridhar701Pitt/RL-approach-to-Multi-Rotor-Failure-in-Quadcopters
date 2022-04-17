@@ -124,16 +124,21 @@ if __name__ == "__main__":
     parser.add_argument('--act',        default='rpm',  type=ActionType,                                                           help='Action space (default: one_d_rpm)', metavar='')
     parser.add_argument('--cpu',        default='1',          type=int,                                                                  help='Number of training environments (default: 1)', metavar='') 
     parser.add_argument('--steps',        default=10000,          type=int,                                                                  help='Number of time steps (default: 10000)', metavar='')       
-    
+    # GCP params
     parser.add_argument('--gcp_save_interval',   default=4000,        type=int,       help='Number of timesteps between saves (default: 4000)', metavar='')
     parser.add_argument('--gcp', type=bool, default=False, help='set to True if running on gcp')
     parser.add_argument('--model-dir', default=None, help='The directory to store the model - relevant if gcp is true')
+    # Use pretrained model params
+    parser.add_argument('--premod', type=bool, default=False, help='set to True if using the pretrained model')
+    parser.add_argument('--preloc', type=str, help='The pretrained folder written as pretrained/save-<env>-<algo>-<obs>-<act>-<time_date>', metavar='')
+    
 
     ARGS = parser.parse_args()
 
     #### Save directory ########################################
     foldername = 'save-'+ARGS.env+'-'+ARGS.algo+'-'+ARGS.obs.value+'-'+ARGS.act.value+'-'+datetime.now().strftime("%m.%d.%Y_%H.%M.%S")
     filename = os.path.dirname(os.path.abspath(__file__))+'/results/'+foldername
+    print(filename)
     if not os.path.exists(filename):
         os.makedirs(filename+'/')
     
@@ -254,6 +259,26 @@ if __name__ == "__main__":
                                                                 tensorboard_log=filename+'/tb/',
                                                                 verbose=1
                                                                 )
+
+        
+        #load from a saved model
+        if ARGS.premod == True:
+            preloc_filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), ARGS.preloc)
+            print(preloc_filename)
+            if os.path.isfile(preloc_filename+'/success_model.zip'):
+                preloc_path = preloc_filename+'/success_model.zip'
+            elif os.path.isfile(preloc_filename+'/best_model.zip'):
+                preloc_path = preloc_filename+'/best_model.zip'
+            else:
+                print("[ERROR]: no model under the specified path", preloc_filename)
+                exit("Exit: No saved model Found")
+
+            print("loading from saved model from", preloc_path)
+            model.set_parameters(preloc_path)
+            print("SAC Model Loaded")
+        else:
+            print("NOTE: Model is being trained from scratch")
+
     if ARGS.algo == 'td3':
         model = TD3(td3ddpgMlpPolicy,
                     train_env,

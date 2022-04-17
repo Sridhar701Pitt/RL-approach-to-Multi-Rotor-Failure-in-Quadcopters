@@ -29,7 +29,7 @@ class SingleRotorFailure(HoverAviary):
                          act=act
                          )
         self.initial_point = initial_xyzs
-        self.goal_point = np.array([0, 0, 1])
+        self.goal_point = np.array([1, 1, 0.5])
 
 
     def _clipAndNormalizeState(self,
@@ -116,7 +116,7 @@ class SingleRotorFailure(HoverAviary):
         rpms = super()._preprocessAction(action)
         # Set 1,3rd motor value to 0
         # dual rotor
-        rpms[0] = 0
+        # rpms[0] = 0
         rpms[2] = 0
         # print(action)
         # print(rpms)

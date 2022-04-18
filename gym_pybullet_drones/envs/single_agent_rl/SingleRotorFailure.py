@@ -82,7 +82,7 @@ class SingleRotorFailure(HoverAviary):
         else:
             rpm_reward = 0
 
-        reward = goal_reward + rpm_reward
+        reward = goal_reward #+ rpm_reward
 
         self.old_rpm = np.copy(self.current_rpm)
 
@@ -237,7 +237,7 @@ class SingleRotorFailure(HoverAviary):
         rpms = super()._preprocessAction(action)
         # Set 1,3rd motor value to 0
         # dual rotor
-        # rpms[0] = 0
+        rpms[0] = 0
         rpms[2] = 0
 
         return rpms

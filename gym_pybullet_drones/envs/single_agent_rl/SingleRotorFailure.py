@@ -82,7 +82,7 @@ class SingleRotorFailure(HoverAviary):
         else:
             rpm_reward = 0
 
-        reward = goal_reward #+ rpm_reward
+        reward = goal_reward + rpm_reward
 
         self.old_rpm = np.copy(self.current_rpm)
 

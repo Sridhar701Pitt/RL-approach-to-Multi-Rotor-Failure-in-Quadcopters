@@ -68,12 +68,12 @@ class SingleRotorFailure(HoverAviary):
         norm = np.linalg.norm(self.goal_point-state[0:3])
 
         # Norm Squared
-        goal_reward = -1 * norm**2
+        # goal_reward = -1 * norm**2
 
         # tanh reward
         c1 = 20
         c2 = 1.0
-        # goal_reward = -1 * c1 * np.tanh(c2 * norm)
+        goal_reward = -1 * c1 * np.tanh(c2 * norm)
 
         # smooth rpm reward
         if self.old_rpm is not None:
@@ -82,7 +82,7 @@ class SingleRotorFailure(HoverAviary):
         else:
             rpm_reward = 0
 
-        reward = goal_reward + rpm_reward
+        reward = goal_reward #+ rpm_reward
 
         self.old_rpm = np.copy(self.current_rpm)
 

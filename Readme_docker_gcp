@@ -120,9 +120,9 @@ docker build -f Dockerfile -t $IMAGE_URI ./
 docker push $IMAGE_URI
 
 #define env variables
-export MODEL_DIR=hover_task_VIII_5Mt_Sfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
+export MODEL_DIR=hover_task_VII_5Mt_Sfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
 export REGION=us-central1
-export JOB_NAME=hover_task_VIII_5Mt_Sfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
+export JOB_NAME=hover_task_VII_5Mt_Sfail_sac_gpu_$(date +%Y%m%d_%H%M%S)
 
 # SAc - GPU
 gcloud ai-platform jobs submit training $JOB_NAME \

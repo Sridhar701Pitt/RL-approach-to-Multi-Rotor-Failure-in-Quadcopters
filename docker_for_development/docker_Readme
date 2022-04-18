@@ -18,4 +18,6 @@ fi
 
 #  after running container
 pip3 install -e .
+cd experiments/learning
+
 python trainers/hover_learn_gcp_sac.py

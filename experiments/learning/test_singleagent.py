@@ -112,11 +112,12 @@ if __name__ == "__main__":
                         record=False,
                         aggregate_phy_steps=shared_constants.AGGR_PHY_STEPS,
                         obs=OBS,
-                        act=ACT
+                        act=ACT,
+                        dogoalpath=True if ARGS.goalpath else False
                         )
 
     #### Create a goal path for test env
-    total_sec = 25
+    total_sec = 10
     steps_per_sec = int(test_env.SIM_FREQ/test_env.AGGR_PHY_STEPS)
     total_steps = total_sec*int(test_env.SIM_FREQ/test_env.AGGR_PHY_STEPS)
     if ARGS.goalpath:
@@ -159,13 +160,27 @@ if __name__ == "__main__":
                        control=np.zeros(12)
                        )
         sync(np.floor(i*test_env.AGGR_PHY_STEPS), start, test_env.TIMESTEP)
-        if done: obs = test_env.reset() # OPTIONAL EPISODE HALT
+        if ARGS.goalpath == False:
+            if done: obs = test_env.reset() # OPTIONAL EPISODE HALT
+    
+    # Get drone path for plotting/reporting purposes
+    drone_path = test_env.getDronePath()
+    
     test_env.close()
     logger.save_as_csv("sa") # Optional CSV save
     logger.plot()
 
     plt.plot(rewardY)
     plt.show()
+
+    if ARGS.goalpath:
+        fig = plt.figure()
+        ax = fig.add_subplot(projection='3d')
+        drone_path_np = np.stack(drone_path, axis=0)
+        goal_path_np = np.stack(goal_path, axis=0)
+        ax.plot(drone_path_np[:,0],drone_path_np[:,1],drone_path_np[:,2])
+        ax.plot(goal_path_np[:,0],goal_path_np[:,1],goal_path_np[:,2])
+        plt.show()
 
     # with np.load(ARGS.exp+'/evaluations.npz') as data:
     #     print(data.files)

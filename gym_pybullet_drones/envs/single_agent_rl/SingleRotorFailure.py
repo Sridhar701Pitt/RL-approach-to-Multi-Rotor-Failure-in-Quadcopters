@@ -17,9 +17,14 @@ class SingleRotorFailure(HoverAviary):
             gui=False,
             record=False,
             obs=ObservationType.KIN,
-            act=ActionType.RPM
+            act=ActionType.RPM,
+            dogoalpath=False
     ):
         self.goal_point = np.array([0.0, 0.0, 0.0])
+        # Store previous and current RPM for reward calculation
+        self.old_rpm = None
+        self.current_rpm = None
+        self.dogoalpath = dogoalpath
         self.GUI = gui
         if self.GUI:
             ## Drone tracking params
@@ -47,7 +52,63 @@ class SingleRotorFailure(HoverAviary):
         self.goal_point = np.array([0.0, 0.0, 0.0])
 
 
+    ################################################################################
+    
+    def _computeReward(self):
+        """Computes the current reward value.
 
+        Returns
+        -------
+        float
+            The reward.
+
+        """
+        state = self._getDroneStateVector(0)
+
+        norm = np.linalg.norm(self.goal_point-state[0:3])
+
+        # Norm Squared
+        # goal_reward = -1 * norm**2
+
+        # tanh reward
+        c1 = 20
+        c2 = 1.0
+        goal_reward = -1 * c1 * np.tanh(c2 * norm)
+
+        # smooth rpm reward
+        if self.old_rpm is not None:
+            c3 = 0.5
+            rpm_reward = -1 * np.sum(np.absolute(self.current_rpm - self.old_rpm)) * c3
+        else:
+            rpm_reward = 0
+
+        reward = goal_reward #+ rpm_reward
+
+        self.old_rpm = np.copy(self.current_rpm)
+
+        return reward
+
+    ################################################################################
+
+    def _computeDone(self):
+        """Computes the current done value.
+
+        Returns
+        -------
+        bool
+            Whether the current episode is done.
+
+        """
+        if self.step_counter/self.SIM_FREQ > self.EPISODE_LEN_SEC:
+            # set old rpm value to None to prepare for next episode reward ##NEEDS UPDATING FOR CUSTOM GOAL SCENARIO
+            if self.dogoalpath == False:
+                self.old_rpm = None
+            
+            return True
+        else:
+            return False
+
+    ################################################################################
 
     def _clipAndNormalizeState(self,
                                state
@@ -169,14 +230,16 @@ class SingleRotorFailure(HoverAviary):
             commanded to the 4 motors of each drone.
 
         """
+        # Store current rpm for reward calculation
+        self.current_rpm = action
+
         # We only ever consider RPMS and set the 4th RPM to 0 to simulate rotor failure
         rpms = super()._preprocessAction(action)
         # Set 1,3rd motor value to 0
         # dual rotor
         # rpms[0] = 0
         rpms[2] = 0
-        # print(action)
-        # print(rpms)
+
         return rpms
 
     def reset(self):
@@ -254,8 +317,12 @@ class SingleRotorFailure(HoverAviary):
 
             if len(self.gRayFrom) != 0:
                 # Update goal point and change color
-                self.goal_point = self.gRayTo[self.renderCount]
-                p.addUserDebugLine(self.gRayFrom[i],self.gRayTo[i], lineColorRGB=[0.1,1.0,0.1],replaceItemUniqueId=self.gRayIds[i],lineWidth=2, physicsClientId=self.CLIENT)
+                print("i: ",i)
+                print(len(self.rayTo))
+                print(len(self.gRayTo))
+                if i < len(self.gRayTo):
+                    self.goal_point = self.gRayTo[i]
+                    p.addUserDebugLine(self.gRayFrom[i],self.gRayTo[i], lineColorRGB=[0.1,1.0,0.1],replaceItemUniqueId=self.gRayIds[i],lineWidth=2, physicsClientId=self.CLIENT)
 
 
         return super()._computeInfo()
@@ -267,4 +334,11 @@ class SingleRotorFailure(HoverAviary):
             self.initial_point = goal_path[0].reshape((1,3))
             self.gRayFrom = goal_path[0:-1]
             self.gRayTo = goal_path[1:]
+    
+    ################################################################################
+
+    def getDronePath(self):
+        if self.GUI:
+            self.rayFrom.append(self.rayTo[-1])
+            return self.rayFrom
 

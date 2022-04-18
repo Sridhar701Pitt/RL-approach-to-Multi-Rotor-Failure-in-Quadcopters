@@ -143,7 +143,7 @@ if __name__ == "__main__":
     
     #### Print config #################################
     print("=============================")
-    print("EXPERIMENT: hover_taskVI_5Mt_Sfail_sac_gpu")
+    print("EXPERIMENT: hover_task_VIII_5Mt_Sfail_sac_gpu")
     print("-----------------------------")    
 
     #### Print out current git commit hash #####################
@@ -273,7 +273,12 @@ if __name__ == "__main__":
                 exit("[ERROR]: Exit: No saved model Found")
 
             print("[INFO]: Loading saved model from: ", preloc_path)
-            model.set_parameters(preloc_path)
+            # model.set_parameters(preloc_path)
+            model = SAC.load(preloc_path,train_env,
+                    policy_kwargs=offpolicy_kwargs,
+                    tensorboard_log=filename+'/tb/',
+                    verbose=1
+                    )
             print("[INFO]: SAC Model Loaded")
         else:
             print("[INFO]: Model is being trained from scratch")

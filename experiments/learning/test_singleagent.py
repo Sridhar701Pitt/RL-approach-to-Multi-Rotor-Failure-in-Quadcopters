@@ -117,7 +117,7 @@ if __name__ == "__main__":
                         )
 
     #### Create a goal path for test env
-    total_sec = 10
+    total_sec = 25
     steps_per_sec = int(test_env.SIM_FREQ/test_env.AGGR_PHY_STEPS)
     total_steps = total_sec*int(test_env.SIM_FREQ/test_env.AGGR_PHY_STEPS)
     if ARGS.goalpath:
@@ -126,7 +126,7 @@ if __name__ == "__main__":
         steps_2_5 = np.floor(2.5*steps_per_sec)
         steps_5 = np.floor(5*steps_per_sec)
         corner_timestamp = np.floor(steps_per_sec*np.array([0, 2.5, 2.5+5, 2.5+10, 2.5+15, 2.5+20, 25]))
-        corners = np.array([[0.0,0.0,0.0],[0.0,0.0,0.0],[0.0,1.0,0.0],[1.0,1.0,0.0],[1.0,0.0,0.0],[0.0,0.0,0.0],[0.0,0.0,0.0]])
+        corners = 2.0*np.array([[0.0,0.0,0.0],[0.0,0.0,0.0],[0.0,1.0,0.0],[1.0,1.0,0.0],[1.0,0.0,0.0],[0.0,0.0,0.0],[0.0,0.0,0.0]])
         for i in range(total_steps):
             goal_x = np.interp(i,corner_timestamp,corners[:,0])
             goal_y = np.interp(i,corner_timestamp,corners[:,1])
@@ -165,9 +165,13 @@ if __name__ == "__main__":
     
     # Get drone path for plotting/reporting purposes
     drone_path = test_env.getDronePath()
+
+    if not ARGS.goalpath:
+        goal_points = test_env.getGoalPoints()
     
     test_env.close()
-    logger.save_as_csv("sa") # Optional CSV save
+    # logger.save_as_csv("sa") # Optional CSV save
+    log_timestamps, log_states, log_controls = logger.getVariables() # For data storage
     logger.plot()
 
     plt.plot(rewardY)
@@ -180,7 +184,64 @@ if __name__ == "__main__":
         goal_path_np = np.stack(goal_path, axis=0)
         ax.plot(drone_path_np[:,0],drone_path_np[:,1],drone_path_np[:,2])
         ax.plot(goal_path_np[:,0],goal_path_np[:,1],goal_path_np[:,2])
+        ax.scatter(0.0,0.0,0.0,color='C1')
+
+        plt.title("Drone trajectories (red) along the square path (green)")
+
         plt.show()
+    else:
+        fig = plt.figure()
+        ax = fig.add_subplot(projection='3d')
+        drone_path_np = np.stack(drone_path, axis=0)
+        goal_path_np = np.stack(goal_points, axis=0)
+        ax.plot(drone_path_np[:,0],drone_path_np[:,1],drone_path_np[:,2])
+        ax.scatter(goal_path_np[:,0],goal_path_np[:,1],goal_path_np[:,2])
+        ax.scatter(0.0,0.0,0.0,color='C1')
+        for goal_point in goal_path_np:
+            ax.plot(np.array([0.0,goal_point[0]]),np.array([0.0,goal_point[1]]),np.array([0.0,goal_point[2]]),color='C2',linestyle='solid',linewidth=1.5)
+        
+        plt.title("Drone trajectories (red path) to origin (green dot)")
+        
+        plt.show()
+
+    # Save Data as numpy arrays
+    file_name = ARGS.exp.split("/")[-1]
+    task_name = "" ## TO be manually inputted
+    checkpoint_name = "checkpoint 5" ## Manual input
+    best_success = "best" ##Manual input best or success model used
+
+    npz_title = task_name+ '_' + checkpoint_name + '_' + best_success
+
+    print("Saving data to npz....")
+    if ARGS.goalpath:
+        np.savez(npz_title + "_data_Sq",
+                task_name=npz_title,
+                file_name=file_name,
+                notes="Custom goal (square)", 
+                total_sec=total_sec, 
+                steps_per_sec=steps_per_sec, 
+                reward_curve=rewardY, 
+                drone_path=drone_path_np,
+                goal_path=goal_path_np,
+                log_timestamps=log_timestamps,
+                log_states=log_states,
+                log_controls=log_controls
+                )
+    else:
+        np.savez(npz_title + "_data_Rd",
+                task_name=npz_title,
+                file_name=file_name,
+                notes="Random goal points", 
+                total_sec=total_sec, 
+                steps_per_sec=steps_per_sec, 
+                reward_curve=rewardY, 
+                drone_path=drone_path_np,
+                goal_points=goal_path_np,
+                log_timestamps=log_timestamps,
+                log_states=log_states,
+                log_controls=log_controls
+                )
+    print("Data saved to: ", npz_title)
 
     # with np.load(ARGS.exp+'/evaluations.npz') as data:
     #     print(data.files)

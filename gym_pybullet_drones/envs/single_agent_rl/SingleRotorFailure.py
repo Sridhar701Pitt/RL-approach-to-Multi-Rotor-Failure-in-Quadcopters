@@ -36,6 +36,8 @@ class SingleRotorFailure(HoverAviary):
             self.gRayFrom = []
             self.gRayTo = []
             self.gRayIds = []
+            ## goal points (for random goal points storage (reporting purposes))
+            self.store_goal_points = []
             
         super().__init__(drone_model=drone_model,
                          initial_xyzs=initial_xyzs,
@@ -235,9 +237,10 @@ class SingleRotorFailure(HoverAviary):
 
         # We only ever consider RPMS and set the 4th RPM to 0 to simulate rotor failure
         rpms = super()._preprocessAction(action)
-        # Set 1,3rd motor value to 0
+        # Set 0th,2nd motor value to 0
         # dual rotor
-        rpms[1] = 0
+        # rpms[0] = 0 #Opp prop
+        # rpms[1] = 0 #AdjProp
         rpms[2] = 0
 
         return rpms
@@ -257,6 +260,8 @@ class SingleRotorFailure(HoverAviary):
         else:
             ## WE want to introduce some variation in the intial positions for robustness
             self.INIT_XYZS = self.initial_point + 1.0*(2*np.random.rand(1,3)-1)
+            if self.GUI == True:
+                self.store_goal_points.append(self.INIT_XYZS.flatten())
 
         if self.GUI:
             #EDIT: update drone tracer
@@ -341,4 +346,9 @@ class SingleRotorFailure(HoverAviary):
         if self.GUI:
             self.rayFrom.append(self.rayTo[-1])
             return self.rayFrom
+    
+    ################################################################################
 
+    def getGoalPoints(self):
+        if self.GUI:
+            return self.store_goal_points

@@ -115,6 +115,12 @@ class Logger(object):
 
     ################################################################################
 
+    def getVariables(self):
+        """Returns variables for external saving"""
+        return self.timestamps, self.states, self.controls
+
+    ################################################################################
+
     def save(self):
         """Save the logs to file.
         """

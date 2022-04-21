@@ -106,10 +106,13 @@ if __name__ == "__main__":
                                               )
     print("\n\n\nMean reward ", mean_reward, " +- ", std_reward, "\n\n")
 
+    save_it = False
+    record_it = False
+
     #### Show, record a video, and log the model's performance #
     test_env = gym.make(env_name,
                         gui=True,
-                        record=False,
+                        record=record_it,
                         aggregate_phy_steps=shared_constants.AGGR_PHY_STEPS,
                         obs=OBS,
                         act=ACT,
@@ -204,44 +207,48 @@ if __name__ == "__main__":
         
         plt.show()
 
-    # Save Data as numpy arrays
-    file_name = ARGS.exp.split("/")[-1]
-    task_name = "" ## TO be manually inputted
-    checkpoint_name = "checkpoint 5" ## Manual input
-    best_success = "best" ##Manual input best or success model used
+    
 
-    npz_title = task_name+ '_' + checkpoint_name + '_' + best_success
+    if save_it:
 
-    print("Saving data to npz....")
-    if ARGS.goalpath:
-        np.savez(npz_title + "_data_Sq",
-                task_name=npz_title,
-                file_name=file_name,
-                notes="Custom goal (square)", 
-                total_sec=total_sec, 
-                steps_per_sec=steps_per_sec, 
-                reward_curve=rewardY, 
-                drone_path=drone_path_np,
-                goal_path=goal_path_np,
-                log_timestamps=log_timestamps,
-                log_states=log_states,
-                log_controls=log_controls
-                )
-    else:
-        np.savez(npz_title + "_data_Rd",
-                task_name=npz_title,
-                file_name=file_name,
-                notes="Random goal points", 
-                total_sec=total_sec, 
-                steps_per_sec=steps_per_sec, 
-                reward_curve=rewardY, 
-                drone_path=drone_path_np,
-                goal_points=goal_path_np,
-                log_timestamps=log_timestamps,
-                log_states=log_states,
-                log_controls=log_controls
-                )
-    print("Data saved to: ", npz_title)
+        # Save Data as numpy arrays
+        file_name = ARGS.exp.split("/")[-1]
+        task_name = "hover_taskVI_5Mt_Sfail_sac_gpu_20220417_182244" ## TO be manually inputted
+        checkpoint_name = "checkpoint_1" ## Manual input
+        best_success = "best" ##Manual input best or success model used
+
+        npz_title = task_name+ '_' + checkpoint_name + '_' + best_success
+
+        print("Saving data to npz....")
+        if ARGS.goalpath:
+            np.savez(npz_title + "_data_Sq",
+                    task_name=npz_title,
+                    file_name=file_name,
+                    notes="Custom goal (square)", 
+                    total_sec=total_sec, 
+                    steps_per_sec=steps_per_sec, 
+                    reward_curve=rewardY, 
+                    drone_path=drone_path_np,
+                    goal_path=goal_path_np,
+                    log_timestamps=log_timestamps,
+                    log_states=log_states,
+                    log_controls=log_controls
+                    )
+        else:
+            np.savez(npz_title + "_data_Rd",
+                    task_name=npz_title,
+                    file_name=file_name,
+                    notes="Random goal points", 
+                    total_sec=total_sec, 
+                    steps_per_sec=steps_per_sec, 
+                    reward_curve=rewardY, 
+                    drone_path=drone_path_np,
+                    goal_points=goal_path_np,
+                    log_timestamps=log_timestamps,
+                    log_states=log_states,
+                    log_controls=log_controls
+                    )
+        print("Data saved to: ", npz_title)
 
     # with np.load(ARGS.exp+'/evaluations.npz') as data:
     #     print(data.files)

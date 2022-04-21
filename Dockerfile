@@ -56,6 +56,9 @@ ENV PATH $PATH:/root/tools/google-cloud-sdk/bin
 # Make sure gsutil will use the default service account
 RUN echo '[GoogleCompute]\nservice_account = default' > /etc/boto.cfg
 
+#torch stuff
+RUN pip3 install torch==1.10.0+cu113 torchvision==0.11.1+cu113 torchaudio==0.10.0+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
+
 #install requirements
 COPY ./requirements.txt /tmp/requirements.txt
 RUN pip3 install -r /tmp/requirements.txt

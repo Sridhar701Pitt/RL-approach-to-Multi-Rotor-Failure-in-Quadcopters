@@ -143,7 +143,7 @@ if __name__ == "__main__":
     
     #### Print config #################################
     print("=============================")
-    print("EXPERIMENT: hover_task_XI_5Mt_DFailAdj_sac_gpu")
+    print("EXPERIMENT: hover_task_XII_5Mt_DFailOpp_sac_gpu")
     print("-----------------------------")    
 
     #### Print out current git commit hash #####################

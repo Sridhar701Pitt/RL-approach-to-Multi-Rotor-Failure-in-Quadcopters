@@ -120,9 +120,10 @@ docker build -f Dockerfile -t $IMAGE_URI ./
 docker push $IMAGE_URI
 
 #define env variables
-export MODEL_DIR=hover_task_XI_5Mt_DFailAdj_sac_gpu_$(date +%Y%m%d_%H%M%S)
+export MODEL_DIR=hover_task_XII_5Mt_DFailOpp_sac_gpu_$(date +%Y%m%d_%H%M%S)
 export REGION=us-central1
-export JOB_NAME=hover_task_XI_5Mt_DFailAdj_sac_gpu_$(date +%Y%m%d_%H%M%S)
+export JOB_NAME=hover_task_XII_5Mt_DFailOpp_sac_gpu_$(date +%Y%m%d_%H%M%S)
+
 
 # SAc - GPU
 gcloud ai-platform jobs submit training $JOB_NAME \
@@ -135,10 +136,26 @@ gcloud ai-platform jobs submit training $JOB_NAME \
   --env=singlerotor \
   --algo=sac \
   --premod=True \
-  --preloc=pretrained/save-singlerotor-sac-kin-rpm-04.17.2022_22.25.21/ \
+  --preloc=pretrained/save-singlerotor-sac-kin-rpm-04.18.2022_23.46.20/ \
   --gcp_save_interval=1000000 \
   --steps=5000000
 
-
-  #Local tersting (dont copy with above)
-  docker run --shm-size=5.03gb $IMAGE_URI --env=singlerotor --premod=True --preloc=pretrained/save-singlerotor-sac-kin-rpm-04.17.2022_22.25.21/
+# SAc - Custom GPU - low usage - slightly faster - high cost
+gcloud ai-platform jobs submit training $JOB_NAME \
+  --region $REGION \
+  --master-image-uri $IMAGE_URI \
+  --scale-tier custom \
+  --master-machine-type a2-highgpu-1g \
+  --master-accelerator count=1,type=nvidia-tesla-a100 \
+  -- \
+  --model-dir=gs://$BUCKET_NAME/$MODEL_DIR \
+  --gcp=True \
+  --env=singlerotor \
+  --algo=sac \
+  --premod=True \
+  --preloc=pretrained/save-singlerotor-sac-kin-rpm-04.18.2022_23.46.20/ \
+  --gcp_save_interval=1000000 \
+  --steps=5000000
+  
+  #Local testing (dont copy with above)
+  docker run --shm-size=5.03gb --gpus all $IMAGE_URI --env=singlerotor --premod=True --preloc=pretrained/save-singlerotor-sac-kin-rpm-04.18.2022_23.46.20/

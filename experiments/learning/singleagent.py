@@ -143,7 +143,7 @@ if __name__ == "__main__":
     
     #### Print config #################################
     print("=============================")
-    print("EXPERIMENT: hover_task_XII_5Mt_DFailOpp_sac_gpu")
+    print("EXPERIMENT: hover_task_XIII_20Mt_Sfail_ppo_gpu")
     print("-----------------------------")    
 
     #### Print out current git commit hash #####################
@@ -332,7 +332,7 @@ if __name__ == "__main__":
                                     seed=0
                                     )
         if env_name == "singlerotor-aviary-v0":
-            train_env = make_vec_env(SingleRotorFailure,
+            eval_env = make_vec_env(SingleRotorFailure,
                                      env_kwargs=sa_env_kwargs,
                                      n_envs=ARGS.cpu,
                                      seed=0
@@ -352,6 +352,7 @@ if __name__ == "__main__":
         eval_env = VecTransposeImage(eval_env)
 
     #### Train the model #######################################
+    # startTime = time.time()
     
     callback_on_best = StopTrainingOnRewardThreshold(reward_threshold=EPISODE_REWARD_THRESHOLD,
                                                      verbose=1
@@ -362,7 +363,7 @@ if __name__ == "__main__":
                                  verbose=1,
                                  best_model_save_path=filename+'/',
                                  log_path=filename+'/',
-                                 eval_freq=int(2000/ARGS.cpu),
+                                 eval_freq=int(1000), #int(2000/ARGS.cpu),
                                  deterministic=True,
                                  render=False
                                  )
@@ -392,6 +393,8 @@ if __name__ == "__main__":
         subprocess.check_call([
                 'gsutil', 'cp', '-r', filename, os.path.join(ARGS.model_dir,foldername)])
         print("saving to GCP... Done")
+    
+    # print("execution TIme: ", str(time.time() - startTime))
 
     #### Print training progression ############################
     with np.load(filename+'/evaluations.npz') as data:

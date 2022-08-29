@@ -106,7 +106,7 @@ docker run -it --rm --privileged --net=host --env-file ./.env -v /tmp/.X11-unix:
 #export variables
 export PROJECT_ID=$(gcloud config list project --format "value(core.project)")
 export IMAGE_REPO_NAME=pybullet_drones_custom_container
-export IMAGE_TAG=pybullet_drones_sac_hover
+export IMAGE_TAG=pybullet_drones_ppo_hover
 export IMAGE_URI=gcr.io/$PROJECT_ID/$IMAGE_REPO_NAME:$IMAGE_TAG
 
 # bucket commands
@@ -120,9 +120,9 @@ docker build -f Dockerfile -t $IMAGE_URI ./
 docker push $IMAGE_URI
 
 #define env variables
-export MODEL_DIR=hover_task_XII_5Mt_DFailOpp_sac_gpu_$(date +%Y%m%d_%H%M%S)
+export MODEL_DIR=hover_task_XIII_20Mt_Sfail_ppo_gpu_$(date +%Y%m%d_%H%M%S)
 export REGION=us-central1
-export JOB_NAME=hover_task_XII_5Mt_DFailOpp_sac_gpu_$(date +%Y%m%d_%H%M%S)
+export JOB_NAME=hover_task_XIII_20Mt_Sfail_ppo_gpu_$(date +%Y%m%d_%H%M%S)
 
 
 # SAc - GPU
@@ -156,6 +156,36 @@ gcloud ai-platform jobs submit training $JOB_NAME \
   --preloc=pretrained/save-singlerotor-sac-kin-rpm-04.18.2022_23.46.20/ \
   --gcp_save_interval=1000000 \
   --steps=5000000
-  
+
+# SAc - Custom CPU
+gcloud ai-platform jobs submit training $JOB_NAME \
+  --region $REGION \
+  --master-image-uri $IMAGE_URI \
+  --scale-tier custom \
+  --master-machine-type n1-highcpu-32 \
+  --master-accelerator count=2,type=nvidia-tesla-t4 \
+  -- \
+  --model-dir=gs://$BUCKET_NAME/$MODEL_DIR \
+  --gcp=True \
+  --env=singlerotor \
+  --algo=ppo \
+  --cpu=32 \
+  --gcp_save_interval=5000000 \
+  --steps=20000000
+
+  # SAc - GPU
+gcloud ai-platform jobs submit training $JOB_NAME \
+  --region $REGION \
+  --master-image-uri $IMAGE_URI \
+  --scale-tier BASIC_GPU \
+  -- \
+  --model-dir=gs://$BUCKET_NAME/$MODEL_DIR \
+  --gcp=True \
+  --env=singlerotor \
+  --algo=ppo \
+  --cpu=6 \
+  --gcp_save_interval=5000000 \
+  --steps=20000000
+
   #Local testing (dont copy with above)
-  docker run --shm-size=5.03gb --gpus all $IMAGE_URI --env=singlerotor --premod=True --preloc=pretrained/save-singlerotor-sac-kin-rpm-04.18.2022_23.46.20/
+  docker run --shm-size=5.03gb $IMAGE_URI --env=singlerotor --algo=ppo --cpu=12

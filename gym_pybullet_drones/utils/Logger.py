@@ -212,6 +212,7 @@ class Logger(object):
             If True, converts logged RPM into PWM values (for Crazyflies).
 
         """
+        
         #### Loop over colors and line styles ######################
         plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y']) + cycler('linestyle', ['-', '--', ':', '-.'])))
         fig, axs = plt.subplots(10, 2)
@@ -374,4 +375,7 @@ class Logger(object):
                             wspace=0.15,
                             hspace=0.0
                             )
-        plt.show()
+        
+        fig.set_size_inches(23,14)
+        
+        # plt.show() # Commented For saving the figure

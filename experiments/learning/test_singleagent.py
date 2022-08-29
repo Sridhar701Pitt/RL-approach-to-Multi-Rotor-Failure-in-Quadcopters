@@ -107,7 +107,8 @@ if __name__ == "__main__":
     print("\n\n\nMean reward ", mean_reward, " +- ", std_reward, "\n\n")
 
     save_it = False
-    record_it = False
+    record_it = True
+    plot_it = True
 
     #### Show, record a video, and log the model's performance #
     test_env = gym.make(env_name,
@@ -120,7 +121,11 @@ if __name__ == "__main__":
                         )
 
     #### Create a goal path for test env
-    total_sec = 25
+    if ARGS.goalpath:
+        total_sec = 25
+    else:
+        total_sec = 15
+    
     steps_per_sec = int(test_env.SIM_FREQ/test_env.AGGR_PHY_STEPS)
     total_steps = total_sec*int(test_env.SIM_FREQ/test_env.AGGR_PHY_STEPS)
     if ARGS.goalpath:
@@ -175,37 +180,52 @@ if __name__ == "__main__":
     test_env.close()
     # logger.save_as_csv("sa") # Optional CSV save
     log_timestamps, log_states, log_controls = logger.getVariables() # For data storage
-    logger.plot()
 
-    plt.plot(rewardY)
-    plt.show()
-
-    if ARGS.goalpath:
-        fig = plt.figure()
-        ax = fig.add_subplot(projection='3d')
-        drone_path_np = np.stack(drone_path, axis=0)
-        goal_path_np = np.stack(goal_path, axis=0)
-        ax.plot(drone_path_np[:,0],drone_path_np[:,1],drone_path_np[:,2])
-        ax.plot(goal_path_np[:,0],goal_path_np[:,1],goal_path_np[:,2])
-        ax.scatter(0.0,0.0,0.0,color='C1')
-
-        plt.title("Drone trajectories (red) along the square path (green)")
-
+    if plot_it:
+        logger.plot()
+        if ARGS.goalpath:
+            plt.savefig('states_square.png',bbox_inches='tight')
+        else:
+            plt.savefig('states_random.png',bbox_inches='tight')
         plt.show()
-    else:
-        fig = plt.figure()
-        ax = fig.add_subplot(projection='3d')
-        drone_path_np = np.stack(drone_path, axis=0)
-        goal_path_np = np.stack(goal_points, axis=0)
-        ax.plot(drone_path_np[:,0],drone_path_np[:,1],drone_path_np[:,2])
-        ax.scatter(goal_path_np[:,0],goal_path_np[:,1],goal_path_np[:,2])
-        ax.scatter(0.0,0.0,0.0,color='C1')
-        for goal_point in goal_path_np:
-            ax.plot(np.array([0.0,goal_point[0]]),np.array([0.0,goal_point[1]]),np.array([0.0,goal_point[2]]),color='C2',linestyle='solid',linewidth=1.5)
         
-        plt.title("Drone trajectories (red path) to origin (green dot)")
-        
+
+
+        plt.plot(rewardY)
+        if ARGS.goalpath:
+            plt.savefig('reward_square.png',bbox_inches='tight')
+        else:
+            plt.savefig('reward_random.png',bbox_inches='tight')    
         plt.show()
+
+        if ARGS.goalpath:
+            fig = plt.figure()
+            ax = fig.add_subplot(projection='3d')
+            drone_path_np = np.stack(drone_path, axis=0)
+            goal_path_np = np.stack(goal_path, axis=0)
+            ax.plot(drone_path_np[:,0],drone_path_np[:,1],drone_path_np[:,2])
+            ax.plot(goal_path_np[:,0],goal_path_np[:,1],goal_path_np[:,2])
+            ax.scatter(0.0,0.0,0.0,color='C1')
+
+            plt.title("Drone trajectories (red) along the square path (green)")
+
+            plt.savefig('traj_square.png',bbox_inches='tight')
+            plt.show()
+        else:
+            fig = plt.figure()
+            ax = fig.add_subplot(projection='3d')
+            drone_path_np = np.stack(drone_path, axis=0)
+            goal_path_np = np.stack(goal_points, axis=0)
+            ax.plot(drone_path_np[:,0],drone_path_np[:,1],drone_path_np[:,2])
+            ax.scatter(goal_path_np[:,0],goal_path_np[:,1],goal_path_np[:,2])
+            ax.scatter(0.0,0.0,0.0,color='C1')
+            for goal_point in goal_path_np:
+                ax.plot(np.array([0.0,goal_point[0]]),np.array([0.0,goal_point[1]]),np.array([0.0,goal_point[2]]),color='C2',linestyle='solid',linewidth=1.5)
+            
+            plt.title("Drone trajectories (red path) to origin (green dot)")
+            
+            plt.savefig('traj_random.png',bbox_inches='tight')  
+            plt.show()
 
     
 
@@ -213,9 +233,9 @@ if __name__ == "__main__":
 
         # Save Data as numpy arrays
         file_name = ARGS.exp.split("/")[-1]
-        task_name = "hover_taskVI_5Mt_Sfail_sac_gpu_20220417_182244" ## TO be manually inputted
-        checkpoint_name = "checkpoint_1" ## Manual input
-        best_success = "best" ##Manual input best or success model used
+        task_name = "hover_task_XI_5Mt_DFailAdj_sac_gpu_20220418_194504" ## TO be manually inputted
+        checkpoint_name = "final" ## Manual input
+        best_success = "success" ##Manual input best or success model used
 
         npz_title = task_name+ '_' + checkpoint_name + '_' + best_success
 
